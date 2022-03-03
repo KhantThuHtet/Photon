@@ -2,15 +2,30 @@ const auth = "563492ad6f91700001000001f171af47cfc54e659670083dbc9b54f7";
 const gallery = document.querySelector(".gallery");
 const searchInput = document.querySelector(".search-input");
 const searchForm = document.querySelector(".search-form");
+const more = document.querySelector('.more');
 let searchValue;
+let fetchLink;
+let page = 1;
 
 //Events
 searchInput.addEventListener("input", (e) => (searchValue = e.target.value));
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   searchPhotos(searchValue);
-  console.log(searchValue);
 });
+
+more.addEventListener('click', loadMore);
+
+async function loadMore(){
+  page++;
+  if(searchValue){
+    fetchLink = `https://api.pexels.com/v1/search?query=${searchValue}&per_page=15&page=${page}`;
+  }else{
+    fetchLink = `https://api.pexels.com/v1/curated?per_page=15&page=${page}`;
+  }
+  const data = await fetchApi(fetchLink);
+  generatePictures(data);
+}
 
 async function fetchApi(url) {
   const dataFetch = await fetch(url, {
@@ -25,16 +40,19 @@ async function fetchApi(url) {
 }
 
 async function curatedPhotos() {
+  fetchLink = `https://api.pexels.com/v1/curated?per_page=15&page=1`;
   const data = await fetchApi(
-    "https://api.pexels.com/v1/curated?per_page=15&page=1"
+    fetchLink
   );
   generatePictures(data);
 }
 curatedPhotos();
 
 async function searchPhotos(query) {
+  clear();
+  fetchLink = `https://api.pexels.com/v1/search?query=${query}&per_page=15&page=1`;
   const data = await fetchApi(
-    `https://api.pexels.com/v1/search?query=${query}&per_page=15&page=1`
+    fetchLink
   );
 
   generatePictures(data);
@@ -45,9 +63,18 @@ function generatePictures(data) {
     const galleryImg = document.createElement("div");
     galleryImg.classList.add("gallery-img");
     galleryImg.innerHTML = `
-                <img src="${photo.src.large}"></img>
-                <p>${photo.photographer}</p>
+    <div class="gallery-info">
+      <p>${photo.photographer}</p>
+      <a href=${photo.src.original}>Download</a>
+    </div>
+    <img src="${photo.src.large}"></img>
             `;
     gallery.appendChild(galleryImg);
   });
 }
+
+function clear(){
+  gallery.innerHTML = '';
+  searchInput.value = '';
+}
+
